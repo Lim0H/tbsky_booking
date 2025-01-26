@@ -1,0 +1,58 @@
+[tool.poetry]
+name = "tbsky_booking"
+version = "0.1.0"
+description = ""
+authors = ["Illia Bahlai <bahlai.illia@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.scripts]
+start = 'tbsky_booking:main'
+
+[tool.poetry.dependencies]
+python = "^3.12"
+sqlmodel = "^0.0.22"
+fastapi = {extras = ["all"], version = "^0.115.6"}
+fastapi-restful = {extras = ["all"], version = "^0.6.0"}
+asyncclick = "^8.1.7.2"
+pydantic-extra-types = "^2.10.1"
+requests = "^2.32.3"
+more-itertools = "^10.5.0"
+pydantic-settings = "^2.7.0"
+httpx = "^0.28.1"
+asyncpg = {extras = ["gssauth"], version = "^0.30.0"}
+greenlet = "^3.1.1"
+orjson = "^3.10.13"
+tenacity = "^9.0.0"
+pip-system-certs = "^4.0"
+pydantic-core = "^2.27.2"
+pycountry = "^24.6.1"
+fake-useragent = "^2.0.3"
+fast-flights = "^2.0"
+dateparser = "^1.2.0"
+timeout-function-decorator = "^2.0.0"
+phonenumbers = "^8.13.53"
+fastapi-cache2 = {extras = ["redis"], version = "^0.2.2"}
+pyjwt = "^2.10.1"
+cryptography = "^44.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.14.0"
+black = "^24.10.0"
+types-dateparser = "^1.2.0.20240420"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.mypy]
+enable_incomplete_feature = ["NewGenericSyntax"]
+plugins = ['pydantic.mypy']
+check_untyped_defs = true
+
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'

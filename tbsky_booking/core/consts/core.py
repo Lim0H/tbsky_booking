@@ -1,0 +1,2 @@
+__all__ = ["SERVICE_ROOT_FOLDER_NAME"]
+SERVICE_ROOT_FOLDER_NAME = "tbsky_booking"
