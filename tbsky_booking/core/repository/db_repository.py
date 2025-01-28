@@ -3,14 +3,17 @@ from abc import ABC
 from contextlib import _AsyncGeneratorContextManager
 from typing import Any, Callable, Iterable, Optional, Type, TypeVar
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
+from tbsky_booking.core.config import AppSettings
 from tbsky_booking.core.db_session.postgres import get_async_session
+from tbsky_booking.core.models import BaseModel
 from tbsky_booking.core.repository.abc_repository import GenericRepository
 from tbsky_booking.core.schema import BaseSchema
 
-from ..models import BaseModel
+from ..depends.security import get_user_id_by_access_token
 
 log = logging.getLogger(__file__)
 
@@ -23,47 +26,58 @@ EDIT_MODEL_VAR = TypeVar("EDIT_MODEL_VAR", bound=BaseSchema)
 
 class BaseDbRepository(GenericRepository[MODEL_VAR], ABC):
     model: Type[MODEL_VAR]
+    user_id: str = AppSettings.users.DEFAULT_USER_ID
 
     async_session_factory: Callable[
         ..., _AsyncGeneratorContextManager[AsyncSession]
     ] = get_async_session
 
-    async def _callback_before_add(self, obj_new: MODEL_VAR) -> MODEL_VAR:
-        return obj_new
+    def __init__(
+        self,
+        user_id: str = Depends(get_user_id_by_access_token),
+    ):
+        self.user_id = user_id
+
+    async def _callback_before_add(self, model: MODEL_VAR) -> MODEL_VAR:
+        return model
+
+    async def _callback_before_edit(self, model: MODEL_VAR) -> MODEL_VAR:
+        return model
 
     async def _add(
         self,
-        obj_new: MODEL_VAR,
+        model: MODEL_VAR,
         db_session: AsyncSession,
         with_commmit=False,
     ) -> MODEL_VAR:
         """Commit new object to the database."""
-        obj_new = await self._callback_before_add(obj_new)
+        model = await self._callback_before_add(model)
+        model.created_by = self.user_id
         try:
-            db_session.add(obj_new)
+            db_session.add(model)
             await db_session.flush()
             if with_commmit:
                 await db_session.commit()
-            await db_session.refresh(obj_new)
-            log.debug(f"Created new entity: {obj_new}.")
-            return obj_new
+            await db_session.refresh(model)
+            log.debug(f"Created new entity: {model}.")
+            return model
         except Exception:
             log.exception("Error while uploading new object to database")
             raise
 
     async def add(
         self,
-        obj_new: MODEL_VAR,
+        model: MODEL_VAR,
         session: Optional[AsyncSession] = None,
         with_commmit=False,
     ) -> MODEL_VAR:
         """Commit new object to the database."""
-        obj_new = await self._callback_before_add(obj_new)
+        model = await self._callback_before_add(model)
         if session:
-            return await self._add(obj_new, session, with_commmit)
+            return await self._add(model, session, with_commmit)
         try:
             async with self.async_session_factory() as db_session:
-                return await self._add(obj_new, db_session, with_commmit)
+                return await self._add(model, db_session, with_commmit)
         except Exception:
             log.exception("Error while uploading new object to database")
             raise
@@ -93,4 +107,45 @@ class BaseDbRepository(GenericRepository[MODEL_VAR], ABC):
                     q = q.filter(col(col_field).is_(value))
                 else:
                     q = q.filter(col(col_field) == value)
-            return (await db_session.execute(q)).scalars().all()
+            q = q.order_by(col(self.model.created_at).desc())
+            return list((await db_session.execute(q)).scalars().all())
+
+    async def _edit(
+        self,
+        model: MODEL_VAR,
+        session: AsyncSession,
+        with_commmit=False,
+    ) -> MODEL_VAR:
+        model.updated_by = self.user_id
+        return await self._add(model, session, with_commmit)
+
+    async def edit(
+        self,
+        model: MODEL_VAR,
+        session: Optional[AsyncSession] = None,
+        with_commmit=False,
+    ) -> MODEL_VAR:
+        """Commit new object to the database."""
+        model = await self._callback_before_edit(model)
+        if session:
+            return await self._edit(model, session, with_commmit)
+        try:
+            async with self.async_session_factory() as db_session:
+                return await self._edit(model, db_session, with_commmit)
+        except Exception:
+            log.exception("Error while uploading new object to database")
+            raise
+
+    async def merge(
+        self,
+        model: MODEL_VAR,
+        schema: EDIT_MODEL_VAR,
+        session: Optional[AsyncSession] = None,
+        with_commmit=False,
+    ) -> MODEL_VAR:
+        for attr, value in schema.model_dump(exclude_unset=True).items():
+            if not hasattr(model, attr):
+                raise AttributeError(f"Model {model} has no attribute {attr}")
+            if getattr(model, attr) != value:
+                setattr(model, attr, value)
+        return await self.edit(model, session=session, with_commmit=with_commmit)

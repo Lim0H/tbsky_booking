@@ -22,7 +22,19 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 def init_fastapi_server() -> FastAPI:
-    app = FastAPI(title="TBSky Booking Service", lifespan=lifespan)
+    """
+    Initialize FastAPI server.
+
+    This function initializes a FastAPI server and returns it.
+    The server is configured with a lifespan and includes all routers.
+    """
+    app = FastAPI(
+        title="TBSky Booking Service",
+        lifespan=lifespan,
+        description="""
+Ticket Booking Sky Booking Service
+""",
+    )
 
     for router in routers:
         app.include_router(router, prefix="/api/v1")

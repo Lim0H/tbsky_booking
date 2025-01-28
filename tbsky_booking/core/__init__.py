@@ -1,6 +1,7 @@
 from .config import AppSettings
 from .consts import *
 from .db_session import *
+from .depends import *
 from .logging import *
 from .models import *
 from .repository import *

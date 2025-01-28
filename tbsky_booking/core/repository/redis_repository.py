@@ -34,39 +34,39 @@ class BaseRedisRepository(GenericRepository[MODEL_VAR], ABC):
     )
     pipeline_factory: Callable[..., PIPELINE_SESSION] = lambda _: pipeline_factory()
 
-    async def _callback_before_add(self, obj_new: MODEL_VAR) -> MODEL_VAR:
-        return obj_new
+    async def _callback_before_add(self, model: MODEL_VAR) -> MODEL_VAR:
+        return model
 
     async def _add(
         self,
-        obj_new: MODEL_VAR,
+        model: MODEL_VAR,
         db_session: PIPELINE_SESSION,
         with_execute=False,
     ) -> MODEL_VAR:
         """Commit new object to the database."""
-        obj_new = await self._callback_before_add(obj_new)
+        model = await self._callback_before_add(model)
         try:
-            await db_session.set(obj_new.key, obj_new.model_dump_json())
+            await db_session.set(model.key, model.model_dump_json())
             if with_execute:
                 await db_session.execute()
-            return obj_new
+            return model
         except Exception:
             log.exception("Error while uploading new object to database")
             raise
 
     async def add(
         self,
-        obj_new: MODEL_VAR,
+        model: MODEL_VAR,
         /,
         pipeline: Optional[PIPELINE_SESSION] = None,
         with_execute=False,
     ) -> MODEL_VAR:
         """Commit new object to the database."""
-        obj_new = await self._callback_before_add(obj_new)
+        model = await self._callback_before_add(model)
         if pipeline:
-            return await self._add(obj_new, pipeline, with_execute)
+            return await self._add(model, pipeline, with_execute)
         try:
-            return await self._add(obj_new, self.pipeline_factory(), with_execute)
+            return await self._add(model, self.pipeline_factory(), with_execute)
         except Exception:
             log.exception("Error while uploading new object to database")
             raise

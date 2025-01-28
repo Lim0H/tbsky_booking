@@ -1,6 +1,8 @@
 from abc import ABC
 from typing import Generator, Iterable, Optional
 
+from fastapi import HTTPException
+
 __all__ = [
     "GetRepository",
     "AddRepository",
@@ -36,7 +38,7 @@ class GetRepository[T](EmptyRepository, ABC):
         result = await self.get(*args, **kwargs)
         if result:
             return result[0]
-        raise ValueError
+        raise HTTPException(status_code=404, detail=f"{args[0]} not found")
 
 
 class AddRepository[T](EmptyRepository, ABC):

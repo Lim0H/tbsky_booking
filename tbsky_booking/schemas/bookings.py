@@ -13,6 +13,7 @@ __all__ = [
     "BookingPassengerOneOut",
     "BookingPassengerManyOut",
     "BookingCreate",
+    "BookingPassengerEdit",
     "BookingPassengerCreate",
 ]
 
@@ -38,6 +39,10 @@ class BookingManyOut(BookingBase):
 
 class BookingPassengerCreate(BookingPassengerBase):
     pass
+
+
+class BookingPassengerEdit(BookingPassengerBase):
+    booking_passenger_id: PrimaryKeyType
 
 
 class BookingCreate(BookingBase):
