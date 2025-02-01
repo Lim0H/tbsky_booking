@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 import orjson
@@ -19,15 +20,23 @@ __all__ = ["bookings_router"]
 
 bookings_router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
+log = logging.getLogger(__file__)
+
 
 def get_flight_path(
     trip_key: Annotated[str, Path()],
 ) -> FlightPath:
     model_json = PublicSafelyBase64Tools.decode(trip_key)
-    trip_key = PublicSafelyBase64Tools.crypto.decrypt(trip_key)
     model_dict = orjson.loads(model_json)
-    model_dict["trip_key"] = trip_key
-    return FlightPath(**model_dict)
+    flight_path = FlightPath(**model_dict)
+    model_dict_without_trip_key = model_dict.copy()
+    model_dict_without_trip_key.pop("trip_key")
+    trip_key = PublicSafelyBase64Tools.base64.encode(
+        orjson.dumps(model_dict_without_trip_key).decode("utf-8")
+    )
+    flight_path.trip_key = trip_key
+    log.info(f"Model from json: {flight_path}, Trip key: {trip_key}")
+    return flight_path
 
 
 @cbv(bookings_router)
@@ -37,11 +46,11 @@ class BookingsResource(ProtectedResource):
     @bookings_router.post("/{trip_key}", status_code=201, response_model=BookingOneOut)
     async def create_booking(
         self,
-        fligth_path: Annotated[FlightPath, Depends(get_flight_path)],
+        flight_path: Annotated[FlightPath, Depends(get_flight_path)],
         booking_passengers: Annotated[list[BookingPassengerCreate], Body()],
     ):
         return await self.bookings_service.create_booking(
-            BookingCreate(fligth=fligth_path, passengers=booking_passengers)
+            BookingCreate(flight=flight_path, booking_passengers=booking_passengers)
         )
 
     @bookings_router.patch("/{booking_id}", response_model=BookingOneOut)
@@ -54,7 +63,7 @@ class BookingsResource(ProtectedResource):
             booking_id=booking_id, booking_passengers=booking_passengers
         )
 
-    @bookings_router.post("/{booking_id}", response_model=BookingOneOut)
+    @bookings_router.post("/{booking_id}/confirm", response_model=BookingOneOut)
     async def confirm_booking(
         self,
         booking_id: Annotated[str, Path()],

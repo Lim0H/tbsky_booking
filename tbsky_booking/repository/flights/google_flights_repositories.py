@@ -1,10 +1,9 @@
 import dateparser
 from fast_flights import FlightData, Passengers, TFSData, get_flights_from_filter
-from timeout_function_decorator import timeout
-
 from tbsky_booking.core import MAP_GOOGLE_SEAT_ENUM, FlightsSourceEnum, GoogleTripEnum
 from tbsky_booking.schemas import FlightPath, FlightTrip, FlightTripParams
 from tbsky_booking.utils import to_async
+from timeout_function_decorator import timeout
 
 from .base_flights_repositories import BaseAvailableFlightTrips
 

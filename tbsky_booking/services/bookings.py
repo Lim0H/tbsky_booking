@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import Depends, HTTPException
 
 from tbsky_booking.core import (
@@ -16,6 +18,8 @@ from tbsky_booking.schemas import BookingCreate, BookingPassengerEdit
 
 __all__ = ["BookingsService"]
 
+log = logging.getLogger(__file__)
+
 
 class BookingsService:
     def __init__(
@@ -33,11 +37,17 @@ class BookingsService:
         self.user_id = user_id
 
     async def create_booking(self, booking_create: BookingCreate) -> Booking:
+        log.info(
+            f'Creating new booking with trip_key "{booking_create.flight.trip_key}"'
+        )
         if flight := (
             await self.flights_repository.get_first(
-                params={"trip_key": booking_create.fligth.trip_key}
+                params={"trip_key": booking_create.flight.trip_key}
             )
         ):
+            log.info(
+                f"Flight with trip_key {booking_create.flight.trip_key} already exists"
+            )
             if exists_booking := (
                 await self.bookings_repository.get_first(
                     params={
@@ -50,23 +60,35 @@ class BookingsService:
                     }
                 )
             ):
+                log.info(
+                    f"Booking with trip_key {booking_create.flight.trip_key} already exists, booking_id: {exists_booking.booking_id}"
+                )
                 raise HTTPException(
                     status_code=400,
-                    detail=f'Booking with trip_key "{booking_create.fligth.trip_key}" already exists, booking_id: {exists_booking.booking_id}',
+                    detail=f'Booking with trip_key "{booking_create.flight.trip_key}" already exists, booking_id: {exists_booking.booking_id}',
                 )
         async with self.flights_repository.async_session_factory() as db_session:
             if not flight:
+                log.info("Flight not found, creating new flight")
                 origin_airport = await self.airports_repository.get_one(
-                    airport_iata=booking_create.fligth.origin_airport_iata
+                    params={"airport_iata": booking_create.flight.origin_airport_iata}
                 )
                 destination_airport = await self.airports_repository.get_one(
-                    airport_iata=booking_create.fligth.destination_airport_iata
+                    params={
+                        "airport_iata": booking_create.flight.destination_airport_iata
+                    }
                 )
                 flight = await self.flights_repository.add(
                     Flight(
+                        date_in=booking_create.flight.origin_trips[0].date_in,
+                        date_out=(
+                            booking_create.flight.destination_trips[-1].date_out
+                            if booking_create.flight.destination_trips
+                            else booking_create.flight.origin_trips[-1].date_out
+                        ),
                         origin_airport_id=origin_airport.airport_id,
                         destination_airport_id=destination_airport.airport_id,
-                        trip_key=Base64Tools.encode(booking_create.fligth.trip_key),
+                        trip_key=booking_create.flight.trip_key,
                     ),
                     session=db_session,
                     with_commmit=False,
@@ -77,13 +99,14 @@ class BookingsService:
                     flight_id=flight.flight_id,
                     booking_passengers=[
                         BookingPassenger(**passenger.model_dump())
-                        for passenger in booking_create.passengers
+                        for passenger in booking_create.booking_passengers
                     ],
                 ),
                 session=db_session,
                 with_commmit=False,
             )
             await db_session.commit()
+            log.info("Creating new booking")
             return booking
 
     async def edit_booking_before_confirm(
@@ -118,6 +141,11 @@ class BookingsService:
         booking = await self.bookings_repository.get_one(
             params={"user_id": self.user_id, "booking_id": booking_id}
         )
+        if booking.booking_status != BookingStatusEnum.CREATED:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Booking with id {booking_id} is not created",
+            )
         booking.booking_status = BookingStatusEnum.CONFIRMED
         return await self.bookings_repository.edit(booking)
 

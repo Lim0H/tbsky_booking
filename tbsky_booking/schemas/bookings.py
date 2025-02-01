@@ -24,8 +24,8 @@ class BookingPassengerOneOut(BookingPassengerSecretBase):
 
 class BookingOneOut(BookingBase):
     booking_id: PrimaryKeyType
-    fligth: FlightOut
-    passengers: list[BookingPassengerOneOut]
+    flight: FlightOut
+    booking_passengers: list[BookingPassengerOneOut]
 
 
 class BookingPassengerManyOut(BookingPassengerBase):
@@ -34,17 +34,17 @@ class BookingPassengerManyOut(BookingPassengerBase):
 
 class BookingManyOut(BookingBase):
     booking_id: PrimaryKeyType
-    passengers: list[BookingPassengerManyOut]
+    booking_passengers: list[BookingPassengerManyOut]
 
 
-class BookingPassengerCreate(BookingPassengerBase):
+class BookingPassengerCreate(BookingPassengerSecretBase):
     pass
 
 
-class BookingPassengerEdit(BookingPassengerBase):
+class BookingPassengerEdit(BookingPassengerSecretBase):
     booking_passenger_id: PrimaryKeyType
 
 
 class BookingCreate(BookingBase):
-    fligth: FlightPath
-    passengers: list[BookingPassengerCreate]
+    flight: FlightPath
+    booking_passengers: list[BookingPassengerCreate]

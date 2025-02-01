@@ -10,7 +10,7 @@ from tbsky_booking.core import (
     PublicSafelyBase64Tools,
     SeatEnum,
 )
-from tbsky_booking.models import AirPortBase, CountryBase, FligthBase
+from tbsky_booking.models import AirPortBase, CountryBase, FlightBase
 
 __all__ = [
     "AvailableDate",
@@ -34,7 +34,7 @@ class AirPortOut(AirPortBase):
     airport_country: CountryOut
 
 
-class FlightOut(FligthBase):
+class FlightOut(FlightBase):
     flight_id: PrimaryKeyType
     origin_airport: AirPortOut
     destination_airport: AirPortOut
@@ -63,7 +63,7 @@ class FlightStep(BaseSchema):
 
 
 class FlightTrip(FlightStep):
-    duration_m: int | None
+    duration_m: int | None = Field(default=None)
     flight_number: Optional[str] = Field(default=None)
     steps: list["FlightStep"] = Field(default_factory=list)
     steps_count: int = Field(default=0)
@@ -81,7 +81,8 @@ class FlightPath(BaseSourceSchema):
     def validate_model(self):
         if self.origin_airport_iata == self.destination_airport_iata:
             raise ValueError("origin_airport_iata == destination_airport_iata")
-        self.trip_key = PublicSafelyBase64Tools.encode(self.model_dump_json())
+        if not self.trip_key:
+            self.trip_key = PublicSafelyBase64Tools.encode(self.model_dump_json())
         return self
 
 

@@ -1,4 +1,5 @@
 from datetime import date
+from email.policy import default
 from typing import Optional
 
 from pydantic import EmailStr
@@ -39,8 +40,8 @@ class BookingPassengerBase(BaseSchema):
 
 
 class BookingPassengerSecretBase(BookingPassengerBase):
-    email: Optional[EmailStr]
-    phone_number: Optional[PhoneNumber]
+    email: Optional[EmailStr] = Field(default=None)
+    phone_number: Optional[PhoneNumber] = Field(default=None)
     passport_number: str
     passport_expire_date: date
 
@@ -51,7 +52,7 @@ class BookingPassenger(BookingPassengerSecretBase, BaseModel, table=True):
     booking_passenger_id: PrimaryKeyType = make_primary_key()
     booking_id: ForeignKeyType = Field(foreign_key="bookings.booking_id")
 
-    booking: "Booking" = Relationship()
+    booking: "Booking" = Relationship(back_populates="booking_passengers")
 
 
 class BookingBase(BaseSchema):
@@ -65,5 +66,11 @@ class Booking(BookingBase, BaseModel, table=True):
     flight_id: ForeignKeyType = Field(foreign_key="flights.flight_id")
 
     user_id: str
-    flight: Flight = Relationship()
-    booking_passengers: list["BookingPassenger"] = Relationship()
+    flight: Flight = Relationship(
+        back_populates="bookings",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
+    booking_passengers: list["BookingPassenger"] = Relationship(
+        back_populates="booking",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )

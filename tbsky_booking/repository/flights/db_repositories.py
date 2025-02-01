@@ -3,7 +3,6 @@ import logging
 from itertools import groupby
 
 from more_itertools import filter_map
-
 from tbsky_booking.core import (
     OPEN_FLIGHTS_AIRPORTS_DATA,
     OPEN_FLIGHTS_COUNTRIES_DATA,
@@ -125,7 +124,7 @@ class AirPortsRepository(BaseFlightsRepository[AirPort]):
                         )
                         else None
                     ),
-                    country_id=country.country_id,
+                    airport_country=country,
                     dst=airport_dict["DST"],
                     tz_database_timezone=airport_dict["Tz_database_timezone"],
                 ),

@@ -27,7 +27,7 @@ def get_async_engine() -> AsyncEngine:
     """Return async database engine."""
     try:
         async_engine: AsyncEngine = create_async_engine(
-            str(AppSettings.database.ASYNC_DATABASE_URI),
+            str(AppSettings.database.DATABASE_URL),
             future=True,
             # echo=True,
         )

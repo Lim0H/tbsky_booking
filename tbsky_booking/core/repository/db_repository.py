@@ -101,7 +101,7 @@ class BaseDbRepository(GenericRepository[MODEL_VAR], ABC):
             q = select(self.model).filter(col(self.model.deleted).is_(False))
             for col_name, value in params.items():
                 col_field = getattr(self.model, col_name)
-                if any(map(lambda x: isinstance(value, x), [list, set, tuple])):
+                if isinstance(value, (list, set, tuple)):
                     q = q.filter(col(col_field).in_(value))
                 elif value is None:
                     q = q.filter(col(col_field).is_(value))

@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import ARRAY, Column, String
 from sqlmodel import Field, Relationship
 
+from tbsky_booking.api.v1 import bookings
 from tbsky_booking.core import (
     BaseModel,
     BaseSchema,
@@ -12,7 +13,10 @@ from tbsky_booking.core import (
     make_primary_key,
 )
 
-__all__ = ["Country", "AirPort", "Flight", "FligthBase", "CountryBase", "AirPortBase"]
+if TYPE_CHECKING:
+    from .bookings import Booking
+
+__all__ = ["Country", "AirPort", "Flight", "FlightBase", "CountryBase", "AirPortBase"]
 
 
 class CountryBase(BaseSchema):
@@ -29,7 +33,10 @@ class Country(CountryBase, BaseModel, table=True):
         default_factory=list, sa_column=Column(ARRAY(String()))
     )
 
-    airports: list["AirPort"] = Relationship()
+    airports: list["AirPort"] = Relationship(
+        back_populates="airport_country",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
 
 
 class AirPortBase(BaseSchema):
@@ -44,7 +51,10 @@ class AirPort(AirPortBase, BaseModel, table=True):
 
     country_id: ForeignKeyType = Field(foreign_key="countries.country_id")
 
-    airport_country: Country = Relationship()
+    airport_country: Country = Relationship(
+        back_populates="airports",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
     airport_iata: Optional[str] = Field(unique=True)
     airport_icao: Optional[str]
     latitude: float
@@ -56,13 +66,13 @@ class AirPort(AirPortBase, BaseModel, table=True):
     is_active: bool = Field(default=True)
 
 
-class FligthBase(BaseSchema):
+class FlightBase(BaseSchema):
     date_in: datetime
     date_out: datetime
-    duration_m: int
+    duration_m: int | None = Field(default=None)
 
 
-class Flight(BaseModel, table=True):
+class Flight(BaseModel, FlightBase, table=True):
     __tablename__ = "flights"
 
     flight_id: PrimaryKeyType = make_primary_key()
@@ -71,5 +81,20 @@ class Flight(BaseModel, table=True):
     origin_airport_id: ForeignKeyType = Field(foreign_key="airports.airport_id")
     destination_airport_id: ForeignKeyType = Field(foreign_key="airports.airport_id")
 
-    origin_airport: AirPort = Relationship()
-    destination_airport: AirPort = Relationship()
+    origin_airport: AirPort = Relationship(
+        sa_relationship_kwargs={
+            "primaryjoin": "Flight.origin_airport_id==AirPort.airport_id",
+            "lazy": "joined",
+        },
+    )
+    destination_airport: AirPort = Relationship(
+        sa_relationship_kwargs={
+            "primaryjoin": "Flight.destination_airport_id==AirPort.airport_id",
+            "lazy": "joined",
+        },
+    )
+
+    bookings: list["Booking"] = Relationship(
+        back_populates="flight",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )

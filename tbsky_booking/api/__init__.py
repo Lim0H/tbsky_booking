@@ -3,9 +3,9 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
-
 from tbsky_booking.core import AppSettings, get_redis_connection
 
 from .v1 import routers
@@ -34,6 +34,15 @@ def init_fastapi_server() -> FastAPI:
         description="""
 Ticket Booking Sky Booking Service
 """,
+        docs_url="/booking/docs",
+        openapi_url="/booking/docs/openapi.json",
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     for router in routers:

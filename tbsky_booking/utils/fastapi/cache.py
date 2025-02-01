@@ -34,7 +34,7 @@ def request_key_builder(
 
 
 def cache_result(
-    expire: Optional[int] = 120,
+    expire: Optional[int] = 600,
     coder: Optional[Type[Coder]] = ORJsonCoder,
     key_builder: Optional[KeyBuilder] = request_key_builder,
     namespace: str = "",
