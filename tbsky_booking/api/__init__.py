@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 
-from tbsky_booking.core import get_redis_connection
+from tbsky_booking.core import AppSettings, get_redis_connection
 
 from .v1 import routers
 
@@ -45,6 +45,8 @@ Ticket Booking Sky Booking Service
 async def run_fastapi_server():
     app = init_fastapi_server()
 
-    config = uvicorn.Config(app)
+    config = uvicorn.Config(
+        app, host=str(AppSettings.server.HOST), port=AppSettings.server.PORT
+    )
     server = uvicorn.Server(config)
     await server.serve()
