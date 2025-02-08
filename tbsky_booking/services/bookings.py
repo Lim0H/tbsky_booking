@@ -2,11 +2,7 @@ import logging
 
 from fastapi import Depends, HTTPException
 
-from tbsky_booking.core import (
-    Base64Tools,
-    BookingStatusEnum,
-    get_user_id_by_access_token,
-)
+from tbsky_booking.core import BookingStatusEnum, get_user_id_by_access_token
 from tbsky_booking.models import Booking, BookingPassenger, Flight
 from tbsky_booking.repository import (
     AirPortsRepository,

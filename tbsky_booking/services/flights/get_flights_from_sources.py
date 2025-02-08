@@ -99,12 +99,6 @@ class GetFlightsFromSources(FunctorGetService[FlightPath]):
             getters.append(repo(self.flight_trip_params))
         return getters
 
-    async def get_flights_generator(self):
-        getters = self.get_flights_getters()
-        for task in asyncio.as_completed(getters):
-            result = await task
-            yield result
-
     async def get(
         self,
     ):

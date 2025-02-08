@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import ARRAY, Column, String
 from sqlmodel import Field, Relationship
 
-from tbsky_booking.api.v1 import bookings
 from tbsky_booking.core import (
     BaseModel,
     BaseSchema,
