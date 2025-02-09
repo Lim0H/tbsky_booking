@@ -1,0 +1,30 @@
+[report]
+exclude_also =
+    if TYPE_CHECKING
+    orjson.dumps
+    orjson.loads
+    def main
+    def to_async
+    def get_flight_path
+
+[run]
+omit =
+    tests/*
+    tbsky_booking/__main__.py 
+    tbsky_booking/api/__init__.py
+    tbsky_booking/commands/core/database.py
+    tbsky_booking/core/depends/security.py 
+    tbsky_booking/core/security.py 
+    tbsky_booking/schemas/flights.py
+    tbsky_booking/core/db_session/*
+    tbsky_booking/commands/flights/fill_repositories.py
+    tbsky_booking/commands/__init__.py 
+    tbsky_booking/commands/core/__init__.py
+    tbsky_booking/utils/fastapi/cache.py
+    tbsky_booking/core/logging.py
+    tbsky_booking/commands/cli_manager.py
+    tbsky_booking/core/repository/abc_repository.py
+    tbsky_booking/repository/flights/base_flights_repositories.py
+    tbsky_booking/core/types/sqlmodel.py
+    tbsky_booking/core/service/abc_service.py 
+    tbsky_booking/core/models/security.py

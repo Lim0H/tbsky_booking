@@ -27,7 +27,7 @@ def get_flight_path(
     trip_key: Annotated[str, Path()],
 ) -> FlightPath:
     model_json = PublicSafelyBase64Tools.decode(trip_key)
-    model_dict = orjson.loads(model_json)
+    model_dict: dict = orjson.loads(model_json)
     flight_path = FlightPath(**model_dict)
     model_dict_without_trip_key = model_dict.copy()
     model_dict_without_trip_key.pop("trip_key")
